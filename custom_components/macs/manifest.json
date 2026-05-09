@@ -1,12 +1,12 @@
 {
   "domain": "macs",
   "name": "M.A.C.S. (Macs)",
-  "codeowners": ["@glyndavidson"],
+  "codeowners": ["@XAV59213"],
   "config_flow": true,
   "dependencies": ["http", "lovelace"],
-  "documentation": "https://github.com/glyndavidson/MACS",
+  "documentation": "https://github.com/XAV59213/MACS",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/glyndavidson/MACS/issues",
+  "issue_tracker": "https://github.com/XAV59213/MACS/issues",
   "loggers": ["custom_components.macs"],
-  "version": "1.0.10"
+  "version": "1.1.3"
 }
