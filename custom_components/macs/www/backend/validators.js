@@ -1,3 +1,5 @@
+// custom_components/macs/www/backend/validators.js
+
 export const UNKNOWN_STATES = new Set([
   "",
   "unknown",
@@ -7,6 +9,30 @@ export const UNKNOWN_STATES = new Set([
   "nan",
   "undefined"
 ]);
+
+const VALID_MOODS = new Set([
+  "idle",
+  "happy",
+  "sad",
+  "sleeping",
+  "listening",
+  "thinking",
+  "surprised",
+  "confused",
+  "bored",
+  "excited",
+  "calm",
+  "angry",
+  "tired"
+]);
+
+const ASSIST_STATE_TO_MOOD = {
+  idle: "idle",
+  listening: "listening",
+  processing: "thinking",
+  responding: "happy",
+  error: "confused"
+};
 
 export function isUnknown(value) {
   if (value === null || value === undefined) return true;
@@ -87,11 +113,11 @@ export function toBoolean(value, fallback = false) {
   const raw = String(value).trim().toLowerCase();
   if (UNKNOWN_STATES.has(raw)) return fallback;
 
-  if (["on", "true", "yes", "1", "open", "home", "charging"].includes(raw)) {
+  if (["on", "true", "yes", "1", "open", "home", "charging", "enabled", "active"].includes(raw)) {
     return true;
   }
 
-  if (["off", "false", "no", "0", "closed", "not_home", "discharging"].includes(raw)) {
+  if (["off", "false", "no", "0", "closed", "not_home", "discharging", "disabled", "inactive"].includes(raw)) {
     return false;
   }
 
@@ -137,4 +163,100 @@ export function getEntityNumericAttribute(entity, attribute, fallback = null) {
 export function getFriendlyName(hass, entityId) {
   const entity = getEntityState(hass, entityId);
   return entity?.attributes?.friendly_name || entityId || "";
+}
+
+/**
+ * Normalise une humeur MACS.
+ */
+export function normMood(value, fallback = "idle") {
+  const mood = String(value ?? "").trim().toLowerCase();
+
+  if (VALID_MOODS.has(mood)) {
+    return mood;
+  }
+
+  return VALID_MOODS.has(fallback) ? fallback : "idle";
+}
+
+/**
+ * Normalise la luminosité entre 0 et 100.
+ */
+export function normBrightness(value, fallback = 100) {
+  return clampNumber(value, 0, 100, fallback);
+}
+
+/**
+ * Convertit un état Assist Satellite en humeur MACS.
+ */
+export function assistStateToMood(value) {
+  const state = String(value ?? "").trim().toLowerCase();
+
+  if (ASSIST_STATE_TO_MOOD[state]) {
+    return ASSIST_STATE_TO_MOOD[state];
+  }
+
+  return "idle";
+}
+
+/**
+ * Retourne une URL sûre pour l’iframe MACS.
+ */
+export function safeUrl(value, fallback = "/macs/macs.html") {
+  const raw = String(value || fallback).trim();
+
+  try {
+    return new URL(raw, window.location.origin);
+  } catch {
+    return new URL(fallback, window.location.origin);
+  }
+}
+
+/**
+ * Retourne l’origine cible pour postMessage.
+ */
+export function getTargetOrigin(value) {
+  try {
+    const url = value instanceof URL
+      ? value
+      : new URL(String(value || ""), window.location.origin);
+
+    return url.origin;
+  } catch {
+    return window.location.origin;
+  }
+}
+
+/**
+ * Génère une URL locale vers les fichiers backend/frontend MACS.
+ *
+ * Exemple :
+ * getValidUrl("backend/cards.css")
+ * => /macs/backend/cards.css?v=1.1.3
+ */
+export function getValidUrl(path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+
+  let basePath = "/macs/";
+
+  if (
+    cleanPath.startsWith("backend/") ||
+    cleanPath.startsWith("frontend/") ||
+    cleanPath.startsWith("shared/")
+  ) {
+    basePath += cleanPath;
+  } else {
+    basePath += cleanPath;
+  }
+
+  try {
+    const url = new URL(basePath, window.location.origin);
+
+    if (typeof window !== "undefined" && window.__MACS_VERSION__) {
+      url.searchParams.set("v", window.__MACS_VERSION__);
+    }
+
+    return url.toString();
+  } catch {
+    return basePath;
+  }
 }
