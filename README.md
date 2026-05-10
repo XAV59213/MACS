@@ -135,3 +135,8 @@ If you find Macs useful, please consider [buying me a coffee](https://buymeacoff
 
 [![Buy me a coffee](https://raw.githubusercontent.com/glyndavidson/MACS/main/resources/coffee.png)](https://buymeacoffee.com/glyndavidson)
 <br><br>
+Based on the original M.A.C.S. project by Glyn Davidson:
+https://github.com/glyndavidson/MACS
+
+Modified by Xavier Descamps.
+Licensed under CC BY-NC-SA 4.0.
