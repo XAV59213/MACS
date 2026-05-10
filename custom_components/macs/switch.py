@@ -6,6 +6,7 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     ATTR_ANIMATIONS_ENABLED,
@@ -109,7 +110,7 @@ SWITCH_DESCRIPTIONS: tuple[SwitchEntityDescription, ...] = (
 )
 
 
-DEFAULT_VALUES = {
+DEFAULT_VALUES: dict[str, bool] = {
     ATTR_ANIMATIONS_ENABLED: DEFAULT_ANIMATIONS_ENABLED,
     ATTR_CHARGING: DEFAULT_CHARGING,
     ATTR_WEATHER_CONDITIONS_SNOWY: False,
@@ -134,12 +135,21 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up M.A.C.S. switch entities."""
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault(entry.entry_id, {})
+
+    for description in SWITCH_DESCRIPTIONS:
+        hass.data[DOMAIN][entry.entry_id].setdefault(
+            description.key,
+            DEFAULT_VALUES.get(description.key, False),
+        )
+
     async_add_entities(
         [MacsSwitch(hass, entry, description) for description in SWITCH_DESCRIPTIONS]
     )
 
 
-class MacsSwitch(SwitchEntity):
+class MacsSwitch(SwitchEntity, RestoreEntity):
     """M.A.C.S. switch entity."""
 
     _attr_has_entity_name = True
@@ -155,7 +165,12 @@ class MacsSwitch(SwitchEntity):
         self.entry = entry
         self.entity_description = description
 
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        # IMPORTANT :
+        # unique_id fixe et propre pour que les services retrouvent l'entité.
+        # Exemple attendu : macs_animations_enabled
+        self._attr_unique_id = f"macs_{description.key}"
+        self._attr_suggested_object_id = f"macs_{description.key}"
+
         self._attr_translation_key = description.translation_key
         self._attr_icon = description.icon
         self._attr_device_info = MACS_DEVICE
@@ -167,25 +182,64 @@ class MacsSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the switch."""
-        self.hass.data[DOMAIN][self.entry.entry_id][
-            self.entity_description.key
-        ] = True
+        self.hass.data.setdefault(DOMAIN, {})
+        self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
+        self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = True
 
         self.async_write_ha_state()
+        self.hass.bus.async_fire(
+            f"{DOMAIN}_state_updated",
+            {
+                "entry_id": self.entry.entry_id,
+                "key": self.entity_description.key,
+                "value": True,
+            },
+        )
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off the switch."""
-        self.hass.data[DOMAIN][self.entry.entry_id][
-            self.entity_description.key
-        ] = False
+        self.hass.data.setdefault(DOMAIN, {})
+        self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
+        self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = False
 
         self.async_write_ha_state()
+        self.hass.bus.async_fire(
+            f"{DOMAIN}_state_updated",
+            {
+                "entry_id": self.entry.entry_id,
+                "key": self.entity_description.key,
+                "value": False,
+            },
+        )
 
     async def async_added_to_hass(self) -> None:
-        """Register update listener."""
+        """Restore state and register update listener."""
+        await super().async_added_to_hass()
+
+        self.hass.data.setdefault(DOMAIN, {})
+        self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
+
+        last_state = await self.async_get_last_state()
+        if last_state is not None:
+            self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = (
+                last_state.state == "on"
+            )
+        else:
+            self.hass.data[DOMAIN][self.entry.entry_id].setdefault(
+                self.entity_description.key,
+                DEFAULT_VALUES.get(self.entity_description.key, False),
+            )
 
         @callback
         def _handle_update(event: Event) -> None:
+            data = event.data or {}
+
+            if data.get("entry_id") not in (None, self.entry.entry_id):
+                return
+
+            if data.get("key") not in (None, self.entity_description.key):
+                return
+
             self.async_write_ha_state()
 
         self.async_on_remove(
