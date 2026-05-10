@@ -1,0 +1,320 @@
+{
+  "title": "M.A.C.S.",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Installer M.A.C.S.",
+        "description": "Configurer l’intégration M.A.C.S. pour Home Assistant."
+      }
+    },
+    "abort": {
+      "already_configured": "M.A.C.S. est déjà configuré."
+    }
+  },
+  "entity": {
+    "select": {
+      "mood": {
+        "name": "Humeur"
+      },
+      "debug": {
+        "name": "Débogage"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Luminosité"
+      },
+      "battery_charge": {
+        "name": "Charge batterie"
+      },
+      "temperature": {
+        "name": "Température"
+      },
+      "windspeed": {
+        "name": "Vitesse du vent"
+      },
+      "precipitation": {
+        "name": "Précipitations"
+      }
+    },
+    "switch": {
+      "animations_enabled": {
+        "name": "Animations activées"
+      },
+      "charging": {
+        "name": "En charge"
+      },
+      "weather_conditions_snowy": {
+        "name": "Neigeux"
+      },
+      "weather_conditions_cloudy": {
+        "name": "Nuageux"
+      },
+      "weather_conditions_rainy": {
+        "name": "Pluvieux"
+      },
+      "weather_conditions_windy": {
+        "name": "Venteux"
+      },
+      "weather_conditions_sunny": {
+        "name": "Ensoleillé"
+      },
+      "weather_conditions_stormy": {
+        "name": "Orageux"
+      },
+      "weather_conditions_foggy": {
+        "name": "Brumeux"
+      },
+      "weather_conditions_hail": {
+        "name": "Grêle"
+      },
+      "weather_conditions_lightning": {
+        "name": "Éclairs"
+      },
+      "weather_conditions_partlycloudy": {
+        "name": "Partiellement nuageux"
+      },
+      "weather_conditions_pouring": {
+        "name": "Forte pluie"
+      },
+      "weather_conditions_clear_night": {
+        "name": "Nuit dégagée"
+      },
+      "weather_conditions_exceptional": {
+        "name": "Exceptionnel"
+      }
+    }
+  },
+  "services": {
+    "set_mood": {
+      "name": "Définir l’humeur",
+      "description": "Change l’humeur affichée par M.A.C.S.",
+      "fields": {
+        "mood": {
+          "name": "Humeur",
+          "description": "Humeur à appliquer."
+        }
+      }
+    },
+    "set_brightness": {
+      "name": "Définir la luminosité",
+      "description": "Change la luminosité de M.A.C.S.",
+      "fields": {
+        "brightness": {
+          "name": "Luminosité",
+          "description": "Valeur de luminosité entre 0 et 100 %."
+        }
+      }
+    },
+    "set_temperature": {
+      "name": "Définir la température",
+      "description": "Change la température utilisée par M.A.C.S.",
+      "fields": {
+        "temperature": {
+          "name": "Température",
+          "description": "Température à appliquer."
+        }
+      }
+    },
+    "set_windspeed": {
+      "name": "Définir la vitesse du vent",
+      "description": "Change la vitesse du vent utilisée par M.A.C.S.",
+      "fields": {
+        "windspeed": {
+          "name": "Vitesse du vent",
+          "description": "Vitesse du vent à appliquer."
+        }
+      }
+    },
+    "set_precipitation": {
+      "name": "Définir les précipitations",
+      "description": "Change les précipitations utilisées par M.A.C.S.",
+      "fields": {
+        "precipitation": {
+          "name": "Précipitations",
+          "description": "Quantité de précipitations à appliquer."
+        }
+      }
+    },
+    "set_battery_charge": {
+      "name": "Définir la charge batterie",
+      "description": "Change le niveau de batterie utilisé par M.A.C.S.",
+      "fields": {
+        "battery_charge": {
+          "name": "Charge batterie",
+          "description": "Niveau de batterie entre 0 et 100 %."
+        }
+      }
+    },
+    "set_animations_enabled": {
+      "name": "Activer les animations",
+      "description": "Active ou désactive les animations de M.A.C.S.",
+      "fields": {
+        "animations_enabled": {
+          "name": "Animations activées",
+          "description": "Active ou désactive les animations."
+        }
+      }
+    },
+    "set_charging": {
+      "name": "Définir l’état de charge",
+      "description": "Indique si M.A.C.S. est en charge.",
+      "fields": {
+        "charging": {
+          "name": "En charge",
+          "description": "Indique si M.A.C.S. est branché ou en charge."
+        }
+      }
+    },
+    "set_weather_conditions_snowy": {
+      "name": "Définir neigeux",
+      "description": "Active ou désactive la condition météo neigeuse.",
+      "fields": {
+        "weather_conditions_snowy": {
+          "name": "Neigeux",
+          "description": "Active ou désactive l’effet neige."
+        }
+      }
+    },
+    "set_weather_conditions_cloudy": {
+      "name": "Définir nuageux",
+      "description": "Active ou désactive la condition météo nuageuse.",
+      "fields": {
+        "weather_conditions_cloudy": {
+          "name": "Nuageux",
+          "description": "Active ou désactive l’effet nuageux."
+        }
+      }
+    },
+    "set_weather_conditions_rainy": {
+      "name": "Définir pluvieux",
+      "description": "Active ou désactive la condition météo pluvieuse.",
+      "fields": {
+        "weather_conditions_rainy": {
+          "name": "Pluvieux",
+          "description": "Active ou désactive l’effet pluie."
+        }
+      }
+    },
+    "set_weather_conditions_windy": {
+      "name": "Définir venteux",
+      "description": "Active ou désactive la condition météo venteuse.",
+      "fields": {
+        "weather_conditions_windy": {
+          "name": "Venteux",
+          "description": "Active ou désactive l’effet vent."
+        }
+      }
+    },
+    "set_weather_conditions_sunny": {
+      "name": "Définir ensoleillé",
+      "description": "Active ou désactive la condition météo ensoleillée.",
+      "fields": {
+        "weather_conditions_sunny": {
+          "name": "Ensoleillé",
+          "description": "Active ou désactive l’état ensoleillé."
+        }
+      }
+    },
+    "set_weather_conditions_stormy": {
+      "name": "Définir orageux",
+      "description": "Active ou désactive la condition météo orageuse.",
+      "fields": {
+        "weather_conditions_stormy": {
+          "name": "Orageux",
+          "description": "Active ou désactive l’effet orage."
+        }
+      }
+    },
+    "set_weather_conditions_foggy": {
+      "name": "Définir brumeux",
+      "description": "Active ou désactive la condition météo brumeuse.",
+      "fields": {
+        "weather_conditions_foggy": {
+          "name": "Brumeux",
+          "description": "Active ou désactive l’effet brouillard."
+        }
+      }
+    },
+    "set_weather_conditions_hail": {
+      "name": "Définir grêle",
+      "description": "Active ou désactive la condition météo de grêle.",
+      "fields": {
+        "weather_conditions_hail": {
+          "name": "Grêle",
+          "description": "Active ou désactive l’effet grêle."
+        }
+      }
+    },
+    "set_weather_conditions_lightning": {
+      "name": "Définir éclairs",
+      "description": "Active ou désactive la condition météo avec éclairs.",
+      "fields": {
+        "weather_conditions_lightning": {
+          "name": "Éclairs",
+          "description": "Active ou désactive l’effet éclairs."
+        }
+      }
+    },
+    "set_weather_conditions_partlycloudy": {
+      "name": "Définir partiellement nuageux",
+      "description": "Active ou désactive la condition météo partiellement nuageuse.",
+      "fields": {
+        "weather_conditions_partlycloudy": {
+          "name": "Partiellement nuageux",
+          "description": "Active ou désactive l’état partiellement nuageux."
+        }
+      }
+    },
+    "set_weather_conditions_pouring": {
+      "name": "Définir forte pluie",
+      "description": "Active ou désactive la condition météo de forte pluie.",
+      "fields": {
+        "weather_conditions_pouring": {
+          "name": "Forte pluie",
+          "description": "Active ou désactive l’effet forte pluie."
+        }
+      }
+    },
+    "set_weather_conditions_clear_night": {
+      "name": "Définir nuit dégagée",
+      "description": "Active ou désactive la condition météo nuit dégagée.",
+      "fields": {
+        "weather_conditions_clear_night": {
+          "name": "Nuit dégagée",
+          "description": "Active ou désactive l’état nuit dégagée."
+        }
+      }
+    },
+    "set_weather_conditions_exceptional": {
+      "name": "Définir exceptionnel",
+      "description": "Active ou désactive la condition météo exceptionnelle.",
+      "fields": {
+        "weather_conditions_exceptional": {
+          "name": "Exceptionnel",
+          "description": "Active ou désactive l’état météo exceptionnel."
+        }
+      }
+    },
+    "send_user_message": {
+      "name": "Envoyer un message utilisateur",
+      "description": "Affiche un message utilisateur dans la bulle de dialogue de M.A.C.S.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "Message utilisateur à afficher."
+        }
+      }
+    },
+    "send_assistant_message": {
+      "name": "Envoyer un message assistant",
+      "description": "Affiche un message assistant dans la bulle de dialogue de M.A.C.S.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "Message assistant à afficher."
+        }
+      }
+    }
+  }
+}
