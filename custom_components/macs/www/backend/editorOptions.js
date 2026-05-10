@@ -9,7 +9,9 @@
 import { DEFAULTS } from "../shared/constants.js";
 
 //###############################################################################################
-//                         Element / Config Keys
+//                                                                                              #
+//                         Element / Config Keys                                                #
+//                                                                                              #
 //###############################################################################################
 
 // Assistant Satellite
@@ -98,18 +100,60 @@ const autoBrightnessKeys = {
 };
 
 //###############################################################################################
-//                         Get lists for Combo Boxes
+//                                                                                              #
+//                         Get lists for Combo Boxes                                            #
+//                                                                                              #
 //###############################################################################################
 
 export async function getComboboxItems(hass) {
-	const comboxItems = {};
+	let comboxItems = {};
 
-	comboxItems.satelliteItems = searchForEntities("assist_satellite", "keys", hass);
+	/*
+	 * Assist Satellite
+	 * ----------------
+	 * MACS supporte maintenant :
+	 * - les vrais satellites Home Assistant : assist_satellite.xxxxx
+	 * - les Echo Dot / Alexa exposés en media_player.xxxxx
+	 *
+	 * Exemple :
+	 * media_player.grange_echo_dot
+	 */
+	const assistSatelliteItems = searchForEntities(
+		"assist_satellite",
+		"keys",
+		hass
+	);
 
-	const pipelineItems = await searchForPipelines(hass);
+	const echoDotItems = searchForEntities(
+		"media_player",
+		"entries",
+		hass,
+		null,
+		[
+			"echo",
+			"echo dot",
+			"alexa",
+			"amazon",
+			"dot",
+			"grange",
+			"salon",
+			"cuisine",
+			"chambre",
+			"bureau"
+		]
+	);
+
+	comboxItems.satelliteItems = mergeComboboxItems(
+		assistSatelliteItems,
+		echoDotItems
+	);
+
+	// Gather assistant pipeline IDs and preferred Pipeline
+	let pipelineItems = await searchForPipelines(hass);
 	comboxItems.preferred = pipelineItems.preferred;
 	comboxItems.pipelineItems = pipelineItems.pipelineItems;
 
+	// Gather likely temperature sensors.
 	comboxItems.temperatureItems = searchForEntities(
 		"sensor",
 		"entries",
@@ -118,32 +162,41 @@ export async function getComboboxItems(hass) {
 		["temp", "temperature"]
 	);
 
+	// Gather likely wind speed sensors.
 	comboxItems.windItems = searchForEntities(
 		"sensor",
 		"entries",
 		hass,
 		["wind_speed"],
-		["wind"]
+		["wind", "vent", "windspeed", "wind speed"]
 	);
 
+	// Gather likely precipitation sensors.
 	comboxItems.precipitationItems = searchForEntities(
 		"sensor",
 		"entries",
 		hass,
 		["precipitation", "precipitation_intensity", "precipitation_probability"],
-		["rain", "precip", "precipitation"]
+		["rain", "pluie", "precip", "precipitation"]
 	);
 
-	comboxItems.weatherConditionItems = searchForEntities("weather", "entries", hass);
+	// Gather weather entities for weather_condition strings.
+	comboxItems.weatherConditionItems = searchForEntities(
+		"weather",
+		"entries",
+		hass
+	);
 
+	// Gather likely battery charge % sensors.
 	comboxItems.batteryItems = searchForEntities(
 		"sensor",
 		"entries",
 		hass,
 		["battery"],
-		["battery", "charge", "batt"]
+		["battery", "batterie", "charge", "batt"]
 	);
 
+	// Gather likely battery state/is_charging sensors.
 	const batteryStateSensors = searchForEntities(
 		"sensor",
 		"entries",
@@ -152,6 +205,7 @@ export async function getComboboxItems(hass) {
 		[
 			"battery_state",
 			"battery state",
+			"batterie",
 			"is_charging",
 			"charging",
 			"charge",
@@ -171,6 +225,7 @@ export async function getComboboxItems(hass) {
 		[
 			"battery_state",
 			"battery state",
+			"batterie",
 			"is_charging",
 			"charging",
 			"charge",
@@ -190,6 +245,7 @@ export async function getComboboxItems(hass) {
 	return comboxItems;
 }
 
+// Searches Home Assistant for Entity Ids and States
 function searchForEntities(
 	needle,
 	haystack,
@@ -201,7 +257,7 @@ function searchForEntities(
 		return [];
 	}
 
-	const list = [{ id: "custom", name: "Custom" }];
+	let list = [{ id: "custom", name: "Custom" }];
 	let entities = [];
 
 	if (haystack === "keys") {
@@ -216,14 +272,18 @@ function searchForEntities(
 
 		if (haystack === "keys") {
 			id = entities[i];
-			state = hass.states[id];
-		} else {
+		} else if (haystack === "entries") {
 			id = entities[i][0];
-			state = entities[i][1];
 		}
 
 		if (!id || id.indexOf(needle + ".") !== 0) {
 			continue;
+		}
+
+		if (haystack === "keys") {
+			state = hass.states[id];
+		} else if (haystack === "entries") {
+			state = entities[i][1];
 		}
 
 		let include = false;
@@ -232,7 +292,7 @@ function searchForEntities(
 			include = true;
 		} else {
 			if (possibleDeviceClasses !== null && possibleDeviceClasses.length > 0) {
-				const deviceClass = String(
+				let deviceClass = String(
 					(state && state.attributes && state.attributes.device_class) || ""
 				).toLowerCase();
 
@@ -245,8 +305,8 @@ function searchForEntities(
 			}
 
 			if (possibleNames !== null && possibleNames.length > 0 && include === false) {
-				const name = (state && state.attributes && state.attributes.friendly_name) || "";
-				const hay = (id + " " + name).toLowerCase();
+				let name = (state && state.attributes && state.attributes.friendly_name) || "";
+				let hay = (id + " " + name).toLowerCase();
 
 				for (let c = 0; c < possibleNames.length; c++) {
 					if (hay.indexOf(possibleNames[c].toLowerCase()) !== -1) {
@@ -258,16 +318,21 @@ function searchForEntities(
 		}
 
 		if (include) {
-			const name = (state && state.attributes && state.attributes.friendly_name) || id;
-			list.push({ id, name: String(name) });
+			const friendlyName =
+				(state && state.attributes && state.attributes.friendly_name) || id;
+
+			list.push({
+				id: id,
+				name: String(friendlyName)
+			});
 		}
 	}
 
 	const custom = list.find((item) => item.id === "custom");
 	const sorted = list.filter((item) => item.id !== "custom");
 
-	sorted.sort((a, b) => {
-		return a.name.localeCompare(b.name);
+	sorted.sort(function (a, b) {
+		return String(a.name).localeCompare(String(b.name));
 	});
 
 	if (custom) {
@@ -277,12 +342,14 @@ function searchForEntities(
 	return sorted;
 }
 
+// merge two comboboxes into one, removing duplicates.
 function mergeComboboxItems(...lists) {
 	const byId = new Map();
 
 	lists.forEach((items) => {
 		(items || []).forEach((item) => {
 			if (!item || typeof item.id === "undefined") return;
+
 			if (item.id === "custom") return;
 
 			if (!byId.has(item.id)) {
@@ -293,13 +360,14 @@ function mergeComboboxItems(...lists) {
 
 	const entries = Array.from(byId.values());
 
-	entries.sort((a, b) => {
+	entries.sort(function (a, b) {
 		return String(a.name || a.id).localeCompare(String(b.name || b.id));
 	});
 
 	return [{ id: "custom", name: "Custom" }, ...entries];
 }
 
+// Gets the pipeline IDs for inclusion in the combo boxes
 async function searchForPipelines(hass) {
 	const result = {
 		pipelineItems: [{ id: "custom", name: "Custom" }],
@@ -309,7 +377,9 @@ async function searchForPipelines(hass) {
 	if (!hass) return result;
 
 	try {
-		const res = await hass.callWS({ type: "assist_pipeline/pipeline/list" });
+		const res = await hass.callWS({
+			type: "assist_pipeline/pipeline/list"
+		});
 
 		const pipelines = Array.isArray(res?.pipelines) ? res.pipelines : [];
 		result.preferred = String(res?.preferred_pipeline || "");
@@ -324,14 +394,16 @@ async function searchForPipelines(hass) {
 			result.pipelineItems.push({ id, name });
 		}
 	} catch (_) {
-		// Do nothing, editor still works with Custom
+		// ignore
 	}
 
 	return result;
 }
 
 //###############################################################################################
-//                         Read Config from UI
+//                                                                                              #
+//                                  Read Config from UI                                          #
+//                                                                                              #
 //###############################################################################################
 
 export function readInputs(shadowRoot, event, config) {
@@ -373,7 +445,7 @@ export function readInputs(shadowRoot, event, config) {
 			battery_charge_sensor_enabled: !!(config && config.battery_charge_sensor_enabled),
 			battery_charge_sensor_entity: String((config && config.battery_charge_sensor_entity) ?? ""),
 			battery_charge_sensor_custom: !!(config && config.battery_charge_sensor_custom),
-			battery_charge_sensor_unit: String((config && config.battery_charge_sensor_unit) ?? "%"),
+			battery_charge_sensor_unit: String((config && config.battery_charge_sensor_unit) ?? ""),
 			battery_charge_sensor_min: String((config && config.battery_charge_sensor_min) ?? ""),
 			battery_charge_sensor_max: String((config && config.battery_charge_sensor_max) ?? ""),
 
@@ -403,15 +475,15 @@ export function readInputs(shadowRoot, event, config) {
 }
 
 function getUserInputs(shadowRoot, event, config, ids) {
-	const enabledKey = ids.enabled || false;
-	const selectKey = ids.select || false;
-	const customKey = ids.custom || false;
-	const entityKey = ids.entity || false;
-	const unitKey = ids.unit || false;
-	const minKey = ids.min || false;
-	const maxKey = ids.max || false;
-	const kioskAnimKey = ids.kioskAnimations || false;
-	const kioskTimeoutKey = ids.kioskTimeout || false;
+	const enabledKey = ids.enabled ? ids.enabled : false;
+	const selectKey = ids.select ? ids.select : false;
+	const customKey = ids.custom ? ids.custom : false;
+	const entityKey = ids.entity ? ids.entity : false;
+	const unitKey = ids.unit ? ids.unit : false;
+	const minKey = ids.min ? ids.min : false;
+	const maxKey = ids.max ? ids.max : false;
+	const kioskAnimKey = ids.kioskAnimations ? ids.kioskAnimations : false;
+	const kioskTimeoutKey = ids.kioskTimeout ? ids.kioskTimeout : false;
 
 	const elemEnabled = enabledKey ? shadowRoot.getElementById(enabledKey) : null;
 	const elemSelect = selectKey ? shadowRoot.getElementById(selectKey) : null;
@@ -423,28 +495,20 @@ function getUserInputs(shadowRoot, event, config, ids) {
 	const elemKioskTimeout = kioskTimeoutKey ? shadowRoot.getElementById(kioskTimeoutKey) : null;
 
 	const enabled = getToggleValue(elemEnabled, event, config && config[enabledKey]);
+	const selectValue = getComboboxValue(elemSelect, event);
+	const isCustom = selectValue === "custom";
 
-	const payload = {};
+	const entityVal = isCustom
+		? ((elemEntityInput && elemEntityInput.value) || "")
+		: selectValue;
 
-	if (enabledKey) {
-		payload[enabledKey] = enabled;
-	}
+	let payload = {
+		[enabledKey]: enabled
+	};
 
-	if (selectKey && entityKey) {
-		const selectValue = getComboboxValue(elemSelect, event);
-		const isCustom = selectValue === "custom";
-		const customEntityValue = elemEntityInput ? String(elemEntityInput.value || "").trim() : "";
-		const entityVal = isCustom ? customEntityValue : selectValue;
-
+	if (selectKey) {
 		payload[entityKey] = entityVal;
-
-		if (customKey) {
-			payload[customKey] = isCustom;
-		}
-
-		if (customKey && entityVal === "") {
-			payload[customKey] = false;
-		}
+		payload[customKey] = isCustom;
 	}
 
 	if (unitKey) {
@@ -454,15 +518,15 @@ function getUserInputs(shadowRoot, event, config, ids) {
 	}
 
 	if (minKey) {
-		payload[minKey] = getNumberOrDefault(elemMin);
+		payload[minKey] = getNumberOrDefault(elemMin, minKey);
 	}
 
 	if (maxKey) {
-		payload[maxKey] = getNumberOrDefault(elemMax);
+		payload[maxKey] = getNumberOrDefault(elemMax, maxKey);
 	}
 
 	if (kioskTimeoutKey) {
-		payload[kioskTimeoutKey] = getNumberOrDefault(elemKioskTimeout);
+		payload[kioskTimeoutKey] = getNumberOrDefault(elemKioskTimeout, kioskTimeoutKey);
 	}
 
 	if (kioskAnimKey) {
@@ -471,6 +535,10 @@ function getUserInputs(shadowRoot, event, config, ids) {
 			event,
 			config && config[kioskAnimKey]
 		);
+	}
+
+	if (customKey && entityKey && payload[customKey] && payload[entityKey] === "") {
+		payload[customKey] = false;
 	}
 
 	Object.keys(payload).forEach((key) => {
@@ -483,30 +551,16 @@ function getUserInputs(shadowRoot, event, config, ids) {
 }
 
 function getComboboxValue(el, e) {
-	if (!el) return "";
-
-	if (e && e.currentTarget === el && e.detail) {
-		if (typeof e.detail.value !== "undefined") {
-			return String(e.detail.value || "");
-		}
-
-		if (typeof e.detail.selected !== "undefined") {
-			return String(e.detail.selected || "");
-		}
+	if (e && e.currentTarget === el && e.detail && typeof e.detail.value !== "undefined") {
+		return e.detail.value;
 	}
 
-	if (el.selectedItem) {
-		if (typeof el.selectedItem.value !== "undefined") {
-			return String(el.selectedItem.value || "");
-		}
-
-		if (typeof el.selectedItem.id !== "undefined") {
-			return String(el.selectedItem.id || "");
-		}
+	if (el && el.selectedItem && typeof el.selectedItem.id !== "undefined") {
+		return el.selectedItem.id;
 	}
 
-	if (typeof el.value !== "undefined") {
-		return String(el.value || "");
+	if (el && typeof el.value !== "undefined") {
+		return el.value;
 	}
 
 	return "";
@@ -532,8 +586,10 @@ function getToggleValue(elem, event, fallback) {
 	return !!fallback;
 }
 
-function getNumberOrDefault(elem) {
-	if (!elem) return "";
+function getNumberOrDefault(elem, key) {
+	if (!key || !elem) {
+		return "";
+	}
 
 	const val = elem.value;
 
@@ -542,12 +598,13 @@ function getNumberOrDefault(elem) {
 	}
 
 	const num = Number(val);
-
 	return Number.isFinite(num) ? num : "";
 }
 
 //###############################################################################################
-//                         Sync UI to Config
+//                                                                                              #
+//                                  Sync UI to Config                                            #
+//                                                                                              #
 //###############################################################################################
 
 export function syncInputs(
@@ -575,26 +632,28 @@ export function syncInputs(
 }
 
 export function syncInputGroup(shadowRoot, config, items, keys) {
-	if (!shadowRoot) return;
+	if (!shadowRoot) {
+		return;
+	}
 
-	const enabledKey = keys.enabled || false;
-	const selectKey = keys.select || false;
-	const customKey = keys.custom || false;
-	const entityKey = keys.entity || false;
-	const unitKey = keys.unit || false;
-	const minKey = keys.min || false;
-	const maxKey = keys.max || false;
-	const kioskAnimKey = keys.kioskAnimations || false;
-	const kioskTimeoutKey = keys.kioskTimeout || false;
+	const enabledKey = keys.enabled ? keys.enabled : false;
+	const selectKey = keys.select ? keys.select : false;
+	const customKey = keys.custom ? keys.custom : false;
+	const entityKey = keys.entity ? keys.entity : false;
+	const unitKey = keys.unit ? keys.unit : false;
+	const minKey = keys.min ? keys.min : false;
+	const maxKey = keys.max ? keys.max : false;
+	const kioskAnimKey = keys.kioskAnimations ? keys.kioskAnimations : false;
+	const kioskTimeoutKey = keys.kioskTimeout ? keys.kioskTimeout : false;
 
-	const elemEnabled = enabledKey ? shadowRoot.getElementById(enabledKey) : null;
-	const elemSelect = selectKey ? shadowRoot.getElementById(selectKey) : null;
-	const elemEntity = entityKey ? shadowRoot.getElementById(entityKey) : null;
-	const elemUnit = unitKey ? shadowRoot.getElementById(unitKey) : null;
-	const elemMin = minKey ? shadowRoot.getElementById(minKey) : null;
-	const elemMax = maxKey ? shadowRoot.getElementById(maxKey) : null;
-	const elemKioskAnims = kioskAnimKey ? shadowRoot.getElementById(kioskAnimKey) : null;
-	const elemKioskTimeout = kioskTimeoutKey ? shadowRoot.getElementById(kioskTimeoutKey) : null;
+	const elemEnabled = enabledKey ? shadowRoot.getElementById(enabledKey) : false;
+	const elemSelect = selectKey ? shadowRoot.getElementById(selectKey) : false;
+	const elemEntity = entityKey ? shadowRoot.getElementById(entityKey) : false;
+	const elemUnit = unitKey ? shadowRoot.getElementById(unitKey) : false;
+	const elemMin = minKey ? shadowRoot.getElementById(minKey) : false;
+	const elemMax = maxKey ? shadowRoot.getElementById(maxKey) : false;
+	const elemKioskAnims = kioskAnimKey ? shadowRoot.getElementById(kioskAnimKey) : false;
+	const elemKioskTimeout = kioskTimeoutKey ? shadowRoot.getElementById(kioskTimeoutKey) : false;
 
 	const enabled = !!(config && config[enabledKey]);
 
@@ -620,7 +679,9 @@ export function syncInputGroup(shadowRoot, config, items, keys) {
 
 		const knownSelect =
 			Array.isArray(items) &&
-			items.some((s) => s && s.id === entityId && s.id !== "custom");
+			items.some(function (s) {
+				return s.id === entityId && s.id !== "custom";
+			});
 
 		const hasEntity = entityId !== "";
 		const isCustom = hasEntity && (!!(config && config[customKey]) || !knownSelect);
@@ -628,10 +689,6 @@ export function syncInputGroup(shadowRoot, config, items, keys) {
 
 		if (elemSelect.value !== nextSelect) {
 			elemSelect.value = nextSelect;
-		}
-
-		if (typeof elemSelect.requestUpdate === "function") {
-			elemSelect.requestUpdate();
 		}
 
 		if (entityKey && elemEntity) {
@@ -646,7 +703,9 @@ export function syncInputGroup(shadowRoot, config, items, keys) {
 }
 
 function setToggleState(elem, key, config) {
-	if (!key || !elem) return;
+	if (!key || !elem) {
+		return;
+	}
 
 	const val = !!(config && config[key]);
 
@@ -656,42 +715,45 @@ function setToggleState(elem, key, config) {
 }
 
 function setSelectedValue(elem, key, config) {
-	if (!key || !elem) return;
+	if (!key || !elem) {
+		return;
+	}
 
 	const val = String((config && config[key]) || "");
 
-	if (elem.value !== val) {
-		elem.value = val;
-	}
-
-	if (typeof elem.requestUpdate === "function") {
-		elem.requestUpdate();
+	if (Array.isArray(elem.items)) {
+		if (
+			elem.items.some((item) => String(item.id ?? item.value) === val)
+		) {
+			if (elem.value !== val) {
+				elem.value = val;
+			}
+		}
 	}
 }
 
 function setNumericValue(elem, key, config) {
-	if (!key || !elem) return;
-
-	const val = config && config[key];
-
-	if (val === null || typeof val === "undefined") {
-		if (elem.value !== "") {
-			elem.value = "";
-		}
+	if (!key || !elem) {
 		return;
 	}
 
-	if (elem.value !== String(val)) {
-		elem.value = String(val);
+	const val = config && config[key];
+
+	if (elem.value !== val) {
+		if (val === null || typeof val === "undefined") {
+			elem.value = "";
+		} else {
+			elem.value = String(val);
+		}
 	}
 }
 
 function setEnabledDisabled(elem, key, enabled) {
-	if (!key || !elem) return;
+	if (!key || !elem) {
+		return;
+	}
 
-	const disabled = !enabled;
-
-	if (elem.disabled !== disabled) {
-		elem.disabled = disabled;
+	if (elem.disabled === enabled) {
+		elem.disabled = !enabled;
 	}
 }
