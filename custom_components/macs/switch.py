@@ -145,7 +145,10 @@ async def async_setup_entry(
         )
 
     async_add_entities(
-        [MacsSwitch(hass, entry, description) for description in SWITCH_DESCRIPTIONS]
+        [
+            MacsSwitch(hass, entry, description)
+            for description in SWITCH_DESCRIPTIONS
+        ]
     )
 
 
@@ -166,8 +169,10 @@ class MacsSwitch(SwitchEntity, RestoreEntity):
         self.entity_description = description
 
         # IMPORTANT :
-        # unique_id fixe et propre pour que les services retrouvent l'entité.
-        # Exemple attendu : macs_animations_enabled
+        # unique_id fixe et propre pour que __init__.py retrouve les entités.
+        # Exemple attendu :
+        # unique_id = macs_animations_enabled
+        # entity_id = switch.macs_animations_enabled
         self._attr_unique_id = f"macs_{description.key}"
         self._attr_suggested_object_id = f"macs_{description.key}"
 
@@ -182,33 +187,30 @@ class MacsSwitch(SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the switch."""
-        self.hass.data.setdefault(DOMAIN, {})
-        self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
-        self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = True
-
-        self.async_write_ha_state()
-        self.hass.bus.async_fire(
-            f"{DOMAIN}_state_updated",
-            {
-                "entry_id": self.entry.entry_id,
-                "key": self.entity_description.key,
-                "value": True,
-            },
-        )
+        await self._async_set_value(True)
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off the switch."""
+        await self._async_set_value(False)
+
+    async def _async_set_value(self, value: bool) -> None:
+        """Set switch value."""
+        safe_value = bool(value)
+
         self.hass.data.setdefault(DOMAIN, {})
         self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
-        self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = False
+        self.hass.data[DOMAIN][self.entry.entry_id][
+            self.entity_description.key
+        ] = safe_value
 
         self.async_write_ha_state()
+
         self.hass.bus.async_fire(
             f"{DOMAIN}_state_updated",
             {
                 "entry_id": self.entry.entry_id,
                 "key": self.entity_description.key,
-                "value": False,
+                "value": safe_value,
             },
         )
 
@@ -221,9 +223,10 @@ class MacsSwitch(SwitchEntity, RestoreEntity):
 
         last_state = await self.async_get_last_state()
         if last_state is not None:
-            self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = (
-                last_state.state == "on"
-            )
+            restored_value = last_state.state == "on"
+            self.hass.data[DOMAIN][self.entry.entry_id][
+                self.entity_description.key
+            ] = restored_value
         else:
             self.hass.data[DOMAIN][self.entry.entry_id].setdefault(
                 self.entity_description.key,
@@ -264,6 +267,16 @@ class MacsSwitch(SwitchEntity, RestoreEntity):
             return value
 
         if isinstance(value, str):
-            return value.strip().lower() in ("true", "on", "yes", "1")
+            return value.strip().lower() in (
+                "true",
+                "on",
+                "yes",
+                "1",
+                "enabled",
+                "active",
+            )
 
-        return bool(value)
+        if isinstance(value, (int, float)):
+            return bool(value)
+
+        return fallback
