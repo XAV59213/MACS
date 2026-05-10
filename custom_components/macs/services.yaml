@@ -29,12 +29,14 @@ set_brightness:
   fields:
     brightness:
       name: Luminosité
+      description: Valeur de luminosité entre 0 et 100 %.
       required: true
       selector:
         number:
           min: 0
           max: 100
           step: 1
+          mode: slider
           unit_of_measurement: "%"
 
 set_temperature:
@@ -43,12 +45,14 @@ set_temperature:
   fields:
     temperature:
       name: Température
+      description: Température utilisée par M.A.C.S.
       required: true
       selector:
         number:
           min: -30
           max: 50
           step: 0.1
+          mode: box
           unit_of_measurement: "°C"
 
 set_windspeed:
@@ -57,12 +61,14 @@ set_windspeed:
   fields:
     windspeed:
       name: Vitesse du vent
+      description: Vitesse du vent utilisée par M.A.C.S.
       required: true
       selector:
         number:
           min: 0
           max: 200
           step: 0.1
+          mode: box
           unit_of_measurement: "km/h"
 
 set_precipitation:
@@ -71,12 +77,14 @@ set_precipitation:
   fields:
     precipitation:
       name: Précipitations
+      description: Quantité ou intensité de précipitations utilisée par M.A.C.S.
       required: true
       selector:
         number:
           min: 0
           max: 200
           step: 0.1
+          mode: box
           unit_of_measurement: "mm"
 
 set_battery_charge:
@@ -85,12 +93,14 @@ set_battery_charge:
   fields:
     battery_charge:
       name: Charge batterie
+      description: Niveau de batterie entre 0 et 100 %.
       required: true
       selector:
         number:
           min: 0
           max: 100
           step: 1
+          mode: slider
           unit_of_measurement: "%"
 
 set_animations_enabled:
@@ -99,6 +109,7 @@ set_animations_enabled:
   fields:
     animations_enabled:
       name: Animations activées
+      description: Active les animations si vrai, les désactive si faux.
       required: true
       selector:
         boolean:
@@ -109,6 +120,150 @@ set_charging:
   fields:
     charging:
       name: En charge
+      description: Active l’état de charge si vrai.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_snowy:
+  name: Définir météo neige
+  description: Active ou désactive l’état météo neigeux de M.A.C.S.
+  fields:
+    weather_conditions_snowy:
+      name: Neigeux
+      description: Active l’effet neigeux.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_cloudy:
+  name: Définir météo nuageuse
+  description: Active ou désactive l’état météo nuageux de M.A.C.S.
+  fields:
+    weather_conditions_cloudy:
+      name: Nuageux
+      description: Active l’effet nuageux.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_rainy:
+  name: Définir météo pluvieuse
+  description: Active ou désactive l’état météo pluvieux de M.A.C.S.
+  fields:
+    weather_conditions_rainy:
+      name: Pluvieux
+      description: Active l’effet pluie.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_windy:
+  name: Définir météo venteuse
+  description: Active ou désactive l’état météo venteux de M.A.C.S.
+  fields:
+    weather_conditions_windy:
+      name: Venteux
+      description: Active l’effet vent.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_sunny:
+  name: Définir météo ensoleillée
+  description: Active ou désactive l’état météo ensoleillé de M.A.C.S.
+  fields:
+    weather_conditions_sunny:
+      name: Ensoleillé
+      description: Active l’effet soleil.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_stormy:
+  name: Définir météo orageuse
+  description: Active ou désactive l’état météo orageux de M.A.C.S.
+  fields:
+    weather_conditions_stormy:
+      name: Orageux
+      description: Active l’effet orage.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_foggy:
+  name: Définir météo brumeuse
+  description: Active ou désactive l’état météo brumeux de M.A.C.S.
+  fields:
+    weather_conditions_foggy:
+      name: Brumeux
+      description: Active l’effet brouillard.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_hail:
+  name: Définir météo grêle
+  description: Active ou désactive l’état météo grêle de M.A.C.S.
+  fields:
+    weather_conditions_hail:
+      name: Grêle
+      description: Active l’effet grêle.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_lightning:
+  name: Définir météo éclairs
+  description: Active ou désactive l’état météo avec éclairs de M.A.C.S.
+  fields:
+    weather_conditions_lightning:
+      name: Éclairs
+      description: Active l’effet éclairs.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_partlycloudy:
+  name: Définir météo partiellement nuageuse
+  description: Active ou désactive l’état météo partiellement nuageux de M.A.C.S.
+  fields:
+    weather_conditions_partlycloudy:
+      name: Partiellement nuageux
+      description: Active l’effet partiellement nuageux.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_pouring:
+  name: Définir forte pluie
+  description: Active ou désactive l’état météo forte pluie de M.A.C.S.
+  fields:
+    weather_conditions_pouring:
+      name: Forte pluie
+      description: Active l’effet forte pluie.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_clear_night:
+  name: Définir nuit claire
+  description: Active ou désactive l’état météo nuit claire de M.A.C.S.
+  fields:
+    weather_conditions_clear_night:
+      name: Nuit claire
+      description: Active l’effet nuit claire.
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_exceptional:
+  name: Définir météo exceptionnelle
+  description: Active ou désactive l’état météo exceptionnel de M.A.C.S.
+  fields:
+    weather_conditions_exceptional:
+      name: Exceptionnel
+      description: Active l’effet météo exceptionnelle.
       required: true
       selector:
         boolean:
@@ -119,6 +274,7 @@ send_user_message:
   fields:
     message:
       name: Message
+      description: Texte à afficher comme message utilisateur.
       required: true
       selector:
         text:
@@ -130,6 +286,7 @@ send_assistant_message:
   fields:
     message:
       name: Message
+      description: Texte à afficher comme message assistant.
       required: true
       selector:
         text:
