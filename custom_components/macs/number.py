@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfSpeed, UnitOfTemperature
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     ATTR_BATTERY_CHARGE,
@@ -73,7 +74,7 @@ NUMBER_DESCRIPTIONS: tuple[NumberEntityDescription, ...] = (
 )
 
 
-DEFAULT_VALUES = {
+DEFAULT_VALUES: dict[str, float] = {
     ATTR_BRIGHTNESS: DEFAULT_BRIGHTNESS,
     ATTR_TEMPERATURE: DEFAULT_TEMPERATURE,
     ATTR_WINDSPEED: DEFAULT_WINDSPEED,
@@ -88,12 +89,21 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up M.A.C.S. number entities."""
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault(entry.entry_id, {})
+
+    for description in NUMBER_DESCRIPTIONS:
+        hass.data[DOMAIN][entry.entry_id].setdefault(
+            description.key,
+            DEFAULT_VALUES.get(description.key, 0),
+        )
+
     async_add_entities(
         [MacsNumber(hass, entry, description) for description in NUMBER_DESCRIPTIONS]
     )
 
 
-class MacsNumber(NumberEntity):
+class MacsNumber(NumberEntity, RestoreEntity):
     """M.A.C.S. number entity."""
 
     _attr_has_entity_name = True
@@ -109,7 +119,15 @@ class MacsNumber(NumberEntity):
         self.entry = entry
         self.entity_description = description
 
-        self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        # IMPORTANT :
+        # unique_id fixe et propre pour que les services retrouvent l'entité.
+        # Exemples attendus :
+        # number.macs_brightness
+        # number.macs_temperature
+        # number.macs_windspeed
+        self._attr_unique_id = f"macs_{description.key}"
+        self._attr_suggested_object_id = f"macs_{description.key}"
+
         self._attr_translation_key = description.translation_key
         self._attr_icon = description.icon
         self._attr_device_info = MACS_DEVICE
@@ -123,17 +141,47 @@ class MacsNumber(NumberEntity):
         """Set native value."""
         safe_value = self._clamp(value)
 
-        self.hass.data[DOMAIN][self.entry.entry_id][
-            self.entity_description.key
-        ] = safe_value
+        self.hass.data.setdefault(DOMAIN, {})
+        self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
+        self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = safe_value
 
         self.async_write_ha_state()
+        self.hass.bus.async_fire(
+            f"{DOMAIN}_state_updated",
+            {
+                "entry_id": self.entry.entry_id,
+                "key": self.entity_description.key,
+                "value": safe_value,
+            },
+        )
 
     async def async_added_to_hass(self) -> None:
-        """Register update listener."""
+        """Restore state and register update listener."""
+        await super().async_added_to_hass()
+
+        self.hass.data.setdefault(DOMAIN, {})
+        self.hass.data[DOMAIN].setdefault(self.entry.entry_id, {})
+
+        last_state = await self.async_get_last_state()
+        if last_state is not None:
+            restored = self._clamp(last_state.state)
+            self.hass.data[DOMAIN][self.entry.entry_id][self.entity_description.key] = restored
+        else:
+            self.hass.data[DOMAIN][self.entry.entry_id].setdefault(
+                self.entity_description.key,
+                DEFAULT_VALUES.get(self.entity_description.key, 0),
+            )
 
         @callback
         def _handle_update(event: Event) -> None:
+            data = event.data or {}
+
+            if data.get("entry_id") not in (None, self.entry.entry_id):
+                return
+
+            if data.get("key") not in (None, self.entity_description.key):
+                return
+
             self.async_write_ha_state()
 
         self.async_on_remove(
@@ -163,15 +211,15 @@ class MacsNumber(NumberEntity):
         try:
             number = float(str(value).replace(",", "."))
         except (TypeError, ValueError):
-            number = fallback
+            number = float(fallback)
 
         min_value = self.entity_description.native_min_value
         max_value = self.entity_description.native_max_value
 
         if min_value is not None:
-            number = max(min_value, number)
+            number = max(float(min_value), number)
 
         if max_value is not None:
-            number = min(max_value, number)
+            number = min(float(max_value), number)
 
         return number
