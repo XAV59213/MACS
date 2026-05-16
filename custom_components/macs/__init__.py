@@ -77,7 +77,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[str] = ["select", "number", "switch"]
 
-RESOURCE_BASE_URL = "/macs/macs.js"
+RESOURCE_BASE_URL = "/hacsfiles/macs-xav/macs.js"
 RESOURCE_TYPE = "module"
 
 
@@ -174,8 +174,8 @@ async def _ensure_lovelace_resource(hass: HomeAssistant) -> None:
     else:
         await resources.async_create_item(
             {
-                "res_type": RESOURCE_TYPE,
-                "url": desired_url,
+                    "res_type": RESOURCE_TYPE,
+                    "url": desired_url,
             }
         )
 
