@@ -355,18 +355,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _ensure_entry_state(hass, entry)
 
-    if not hass.data[DOMAIN].get("static_path_registered"):
-        www_path = Path(__file__).parent / "www"
-        manifest_path = Path(__file__).parent / "manifest.json"
-
-        await hass.http.async_register_static_paths(
-            [
-                StaticPathConfig("/macs", str(www_path), cache_headers=False),
-                StaticPathConfig("/macs-manifest.json", str(manifest_path), cache_headers=False),
-            ]
-        )
-
-        hass.data[DOMAIN]["static_path_registered"] = True
+    # Removed legacy static path registration for /macs
+    # HACS now handles the frontend files via /hacsfiles/macs-xav/
+    # No need to register static paths anymore for the card
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
